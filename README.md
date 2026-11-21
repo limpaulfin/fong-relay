@@ -8,7 +8,7 @@
 app/                 giao diện (page.tsx, layout.tsx)
 app/api/health/      backend: kiểm tra sống và kết nối database
 app/api/images/      backend: liệt kê hình trong public/images
-lib/db.ts            lớp database duy nhất (Neon Postgres, đọc DATABASE_URL)
+lib/db.ts            lớp database duy nhất (Postgres chuẩn, dùng với Supabase, đọc DATABASE_URL)
 public/images/       hình tĩnh, URL là /images/<ten-hinh>
 .env.example         mẫu biến môi trường, không chứa giá trị thật
 ```
@@ -29,9 +29,9 @@ npm run build
 
 ## Database
 
-- Mặc định: Neon Postgres gắn qua Vercel (project, Storage, Marketplace). Vercel tự thêm `DATABASE_URL`.
+- Mặc định: Supabase Postgres. Nối qua Vercel Marketplace (Vercel tự thêm biến môi trường) hoặc đặt `DATABASE_URL` trong `.env.local` khi chạy cục bộ.
 - Chưa có `DATABASE_URL` thì ứng dụng vẫn chạy, `/api/health` báo `database: not-configured`.
-- Đổi nhà cung cấp (ví dụ Supabase) chỉ cần sửa `lib/db.ts` và biến môi trường.
+- Đổi nhà cung cấp Postgres khác chỉ cần đổi `DATABASE_URL`; không ghi khóa vào repo.
 
 ## Quy ước hình trong `public/images/`
 
