@@ -2,6 +2,9 @@ const photos = [
   { src: "/images/photo-01.jpg", w: 1600, h: 900 },
   { src: "/images/photo-02.jpg", w: 1600, h: 1066 },
   { src: "/images/photo-03.jpg", w: 1600, h: 900 },
+  { src: "/images/photo-04.jpg", w: 1280, h: 1280 },
+  { src: "/images/photo-05.jpg", w: 900, h: 1600 },
+  { src: "/images/photo-06.jpg", w: 1600, h: 900 },
 ];
 
 export default function Home() {
@@ -15,7 +18,7 @@ export default function Home() {
       <div style={{ display: "grid", gap: "1.25rem" }}>
         {photos.map((p, i) => (
           <figure key={p.src} style={{ margin: 0 }}>
-            <img src={p.src} alt={`Photo ${i + 1}`} width={p.w} height={p.h} loading="lazy" decoding="async" style={{ width: "100%", height: "auto", borderRadius: 8 }} />
+            <img src={p.src} alt={`Photo ${i + 1}`} width={p.w} height={p.h} loading="lazy" decoding="async" style={{ width: "100%", maxWidth: p.h > p.w ? 420 : undefined, height: "auto", borderRadius: 8 }} />
             <figcaption style={{ fontSize: "0.9rem", color: "#555", marginTop: "0.4rem" }}>Photo {i + 1}</figcaption>
           </figure>
         ))}
