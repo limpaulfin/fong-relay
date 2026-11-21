@@ -42,3 +42,10 @@ npm run build
 - Trang https://limpaulfin.github.io/publications/ chỉ tham chiếu hình từ đây.
 
 Không ghi token hay mật khẩu vào repo.
+
+## Giữ database luôn sống (keepalive)
+
+- Supabase gói miễn phí tự tạm dừng project không hoạt động. `vercel.json` có cron `0 3 * * *` (03:00 UTC, 10:00 giờ Việt Nam) gọi `/api/cron/keepalive`.
+- Mỗi lần chạy làm đủ Tạo, Đọc, Sửa, Xóa trên bảng `heartbeat` (`db/schema.sql`, bật RLS, chặn Data API) và xóa hàng quá 7 ngày. Gọi dồn trong 1 giờ chỉ chạy một lần.
+- `CRON_SECRET` (tùy chọn) bắt buộc lời gọi có `Authorization: Bearer <giá trị>`; Vercel cron tự gửi khi biến này có.
+- Kiểm tra: `select id, note, created_at from public.heartbeat order by id desc limit 3;` phải có hàng mới mỗi ngày.
