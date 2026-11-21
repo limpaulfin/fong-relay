@@ -32,6 +32,7 @@ npm run build
 - Mặc định: Supabase Postgres. Nối qua Vercel Marketplace (Vercel tự thêm biến môi trường) hoặc đặt `DATABASE_URL` trong `.env.local` khi chạy cục bộ.
 - Chưa có `DATABASE_URL` thì ứng dụng vẫn chạy, `/api/health` báo `database: not-configured`.
 - Đổi nhà cung cấp Postgres khác chỉ cần đổi `DATABASE_URL`; không ghi khóa vào repo.
+- TLS luôn được kiểm chứng chỉ. Nếu kết nối báo lỗi chứng chỉ, đặt `DATABASE_CA` bằng nội dung PEM của CA gốc do nhà cung cấp phát hành. Không tắt kiểm tra.
 
 ## Quy ước hình trong `public/images/`
 
