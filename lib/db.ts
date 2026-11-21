@@ -1,6 +1,7 @@
 // Lớp truy cập database duy nhất của ứng dụng (Postgres chuẩn, chạy được với Supabase).
 // Chỉ đọc biến môi trường, không giữ khóa trong mã. Luôn kiểm chứng chỉ TLS (không hạ xuống "require").
 import postgres from "postgres";
+import { SUPABASE_ROOT_CA } from "./supabase-ca";
 
 let client: ReturnType<typeof postgres> | undefined;
 
@@ -19,9 +20,10 @@ export function sql() {
   // Bỏ sslmode trong URL: nếu giữ, thư viện có thể hạ xuống chế độ không kiểm chứng chỉ.
   const url = new URL(raw);
   url.searchParams.delete("sslmode");
-  // DATABASE_CA (tùy chọn): nội dung PEM của CA gốc, dùng khi nhà cung cấp không ký bằng CA công cộng.
-  const ca = process.env.DATABASE_CA;
-  const ssl = ca ? { rejectUnauthorized: true, ca } : { rejectUnauthorized: true };
+  // Supabase ký bằng CA riêng (không có trong kho CA của hệ thống), nên mặc định nạp CA gốc của Supabase.
+  // DATABASE_CA (tùy chọn, PEM) ghi đè khi dùng nhà cung cấp Postgres khác.
+  const ca = process.env.DATABASE_CA || SUPABASE_ROOT_CA;
+  const ssl = { rejectUnauthorized: true, ca };
   // prepare:false để tương thích bộ gộp kết nối (pooler) của Supabase ở chế độ transaction.
   client ??= postgres(url.toString(), { ssl, prepare: false, max: 1 });
   return client;
