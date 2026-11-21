@@ -17,9 +17,10 @@ export function hasDatabase(): boolean {
 export function sql() {
   const raw = databaseUrl();
   if (!raw) throw new Error("DATABASE_URL (hoặc POSTGRES_URL) chưa được cấu hình");
-  // Bỏ sslmode trong URL: nếu giữ, thư viện có thể hạ xuống chế độ không kiểm chứng chỉ.
+  // Bỏ MỌI tham số truy vấn trong URL: sslmode có thể hạ mức TLS, còn tham số lạ (Vercel thêm supa=...)
+  // sẽ bị thư viện gửi lên server như tham số khởi động. Mọi tùy chọn đặt tường minh ở dưới.
   const url = new URL(raw);
-  url.searchParams.delete("sslmode");
+  url.search = "";
   // Supabase ký bằng CA riêng (không có trong kho CA của hệ thống), nên mặc định nạp CA gốc của Supabase.
   // DATABASE_CA (tùy chọn, PEM) ghi đè khi dùng nhà cung cấp Postgres khác.
   const ca = process.env.DATABASE_CA || SUPABASE_ROOT_CA;
