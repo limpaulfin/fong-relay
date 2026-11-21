@@ -1,10 +1,10 @@
 const photos = [
-  { src: "/images/bw-01.jpg", w: 1600, h: 900 },
-  { src: "/images/bw-02.jpg", w: 1600, h: 900 },
-  { src: "/images/bw-03.jpg", w: 1600, h: 1066 },
-  { src: "/images/bw-04.jpg", w: 1600, h: 900 },
-  { src: "/images/bw-05.jpg", w: 1280, h: 1280 },
-  { src: "/images/bw-06.jpg", w: 900, h: 1600 },
+  { src: "/images/bw-01.jpg", w: 1400, h: 788 },
+  { src: "/images/bw-02.jpg", w: 1400, h: 788 },
+  { src: "/images/bw-03.jpg", w: 1400, h: 933 },
+  { src: "/images/bw-04.jpg", w: 1400, h: 788 },
+  { src: "/images/bw-05.jpg", w: 1080, h: 1080 },
+  { src: "/images/bw-06.jpg", w: 788, h: 1400 },
 ];
 
 export default function Home() {
