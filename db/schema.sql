@@ -38,3 +38,19 @@ alter table public.tracked_emails enable row level security;
 alter table public.email_opens enable row level security;
 revoke all on public.tracked_emails from anon, authenticated;
 revoke all on public.email_opens from anon, authenticated;
+
+-- Nhật ký hủy đăng ký (unsubscribe journal) — chỉ thêm, không bao giờ xóa.
+-- Cầu nối bất đồng bộ đọc các dòng applied_at IS NULL và đẩy vào lõi thư.
+create table if not exists public.unsubscribes (
+  id bigint generated always as identity primary key,
+  email text not null,
+  source_uuid uuid,
+  ip text,
+  user_agent text,
+  created_at timestamptz not null default now(),
+  applied_at timestamptz
+);
+create index if not exists unsubscribes_created_idx
+  on public.unsubscribes (created_at);
+alter table public.unsubscribes enable row level security;
+revoke all on public.unsubscribes from anon, authenticated;
