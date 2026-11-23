@@ -1,6 +1,6 @@
 // GET /api/track/<uuid>?v=sig — phục vụ hình tracking và ghi một lần mở.
 // Luôn trả hình kể cả khi ghi DB lỗi: không bao giờ làm hỏng email của người nhận.
-import { ensureTrackTables, isUuid, openContext, pngBytes, PIXEL_PNG_BASE64, SIGNATURE_PNG_BASE64, QUOTE_PNG_BASE64 } from "../../../../lib/track";
+import { isUuid, openContext, pngBytes, PIXEL_PNG_BASE64, SIGNATURE_PNG_BASE64, QUOTE_PNG_BASE64 } from "../../../../lib/track";
 import { sql } from "../../../../lib/db";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export async function GET(
 
   if (isUuid(id)) {
     try {
-      await ensureTrackTables();
+      // Không chạy DDL ở đây: DDL timeout từng nuốt luôn cả sự kiện mở.
       const ctx = openContext(req);
       const db = sql();
       // Email chưa đăng ký trước vẫn ghi được (hàng placeholder), không mất sự kiện.
