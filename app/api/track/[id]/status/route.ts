@@ -9,6 +9,17 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  try {
+    return await handle(params);
+  } catch (e) {
+    return Response.json(
+      { error: "status-failed", detail: e instanceof Error ? e.message : String(e) },
+      { status: 500 },
+    );
+  }
+}
+
+async function handle(params: Promise<{ id: string }>) {
   const { id } = await params;
   if (!isUuid(id)) {
     return Response.json({ error: "id không phải UUID" }, { status: 400 });
