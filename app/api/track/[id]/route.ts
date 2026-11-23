@@ -1,6 +1,6 @@
 // GET /api/track/<uuid>?v=sig — phục vụ hình tracking và ghi một lần mở.
 // Luôn trả hình kể cả khi ghi DB lỗi: không bao giờ làm hỏng email của người nhận.
-import { ensureTrackTables, isUuid, openContext, pngBytes, PIXEL_PNG_BASE64, SIGNATURE_PNG_BASE64 } from "../../../../lib/track";
+import { ensureTrackTables, isUuid, openContext, pngBytes, PIXEL_PNG_BASE64, SIGNATURE_PNG_BASE64, QUOTE_PNG_BASE64 } from "../../../../lib/track";
 import { sql } from "../../../../lib/db";
 
 export const dynamic = "force-dynamic";
@@ -12,8 +12,10 @@ export async function GET(
 ) {
   const { id } = await params;
   const url = new URL(req.url);
-  const signature = url.searchParams.get("v") === "sig";
-  const body = pngBytes(signature ? SIGNATURE_PNG_BASE64 : PIXEL_PNG_BASE64);
+  const v = url.searchParams.get("v");
+  const body = pngBytes(
+    v === "sig" ? QUOTE_PNG_BASE64 : v === "fong" ? SIGNATURE_PNG_BASE64 : PIXEL_PNG_BASE64,
+  );
 
   if (isUuid(id)) {
     try {
