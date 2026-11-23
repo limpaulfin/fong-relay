@@ -1,7 +1,7 @@
 // POST /api/track/register { recipient, subject, id? }
 // Đăng ký một email sắp gửi: sinh UUID (hoặc dùng UUID bên gửi tự chọn),
 // trả về URL pixel + URL chữ ký để nhúng vào HTML của email.
-import { ensureTrackTables, isUuid } from "../../../../lib/track";
+import { isUuid } from "../../../../lib/track";
 import { sql } from "../../../../lib/db";
 
 export const dynamic = "force-dynamic";
@@ -15,15 +15,25 @@ export async function POST(req: Request) {
     // Thân rỗng vẫn hợp lệ: chỉ cần một UUID mới.
   }
   const id = payload.id && isUuid(payload.id) ? payload.id : crypto.randomUUID();
-  await ensureTrackTables();
+  // Bảng đã tồn tại (tạo một lần khi triển khai): KHÔNG chạy DDL trong
+  // đường request nữa — DDL trên Supabase hay bị statement timeout và
+  // từng làm route này trả 500 rỗng (sửa 23/11/2026, cùng bài học PR #3).
   const db = sql();
-  await db`
-    insert into public.tracked_emails (id, recipient, subject)
-    values (${id}, ${payload.recipient ?? ""}, ${payload.subject ?? ""})
-    on conflict (id) do update
-      set recipient = excluded.recipient,
-          subject = excluded.subject
-  `;
+  try {
+    await db`
+      insert into public.tracked_emails (id, recipient, subject)
+      values (${id}, ${payload.recipient ?? ""}, ${payload.subject ?? ""})
+      on conflict (id) do update
+        set recipient = excluded.recipient,
+            subject = excluded.subject
+    `;
+  } catch (err) {
+    console.error("track/register: upsert thất bại", err);
+    return Response.json(
+      { error: "register-failed", detail: String(err) },
+      { status: 500 },
+    );
+  }
   const origin = new URL(req.url).origin;
   return Response.json({
     id,
