@@ -1,5 +1,5 @@
 // GET /api/track/<uuid>/status — xem một email đã được mở mấy lần, khi nào, ở đâu.
-import { ensureTrackTables, isUuid } from "../../../../../lib/track";
+import { isUuid } from "../../../../../lib/track";
 import { sql } from "../../../../../lib/db";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,6 @@ async function handle(params: Promise<{ id: string }>) {
   if (!isUuid(id)) {
     return Response.json({ error: "id không phải UUID" }, { status: 400 });
   }
-  await ensureTrackTables();
   const db = sql();
   const emails = await db`
     select id, recipient, subject, sent_at, first_open_at, open_count
