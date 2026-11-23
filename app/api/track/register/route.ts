@@ -1,8 +1,8 @@
 // POST /api/track/register { recipient, subject, id? }
 // Đăng ký một email sắp gửi: sinh UUID (hoặc dùng UUID bên gửi tự chọn),
 // trả về URL pixel + URL chữ ký để nhúng vào HTML của email.
-import { ensureTrackTables, isUuid } from "../../../lib/track";
-import { sql } from "../../../lib/db";
+import { ensureTrackTables, isUuid } from "../../../../lib/track";
+import { sql } from "../../../../lib/db";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
