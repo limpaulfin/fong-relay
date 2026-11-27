@@ -16,6 +16,13 @@ const csp = [
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Đường gọn cho relay: POST /put và GET|HEAD /get/<key> gọi thẳng API route.
+  async rewrites() {
+    return [
+      { source: "/put", destination: "/api/put" },
+      { source: "/get/:key", destination: "/api/get/:key" },
+    ];
+  },
   async headers() {
     return [
       {

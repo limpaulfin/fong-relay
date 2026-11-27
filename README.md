@@ -49,3 +49,11 @@ Không ghi token hay mật khẩu vào repo.
 - Mỗi lần chạy làm đủ Tạo, Đọc, Sửa, Xóa trên bảng `heartbeat` (`db/schema.sql`, bật RLS, chặn Data API) và xóa hàng quá 7 ngày. Gọi dồn trong 1 giờ chỉ chạy một lần.
 - `CRON_SECRET` (tùy chọn) bắt buộc lời gọi có `Authorization: Bearer <giá trị>`; Vercel cron tự gửi khi biến này có.
 - Kiểm tra: `select id, note, created_at from public.heartbeat order by id desc limit 3;` phải có hàng mới mỗi ngày.
+
+## Relay blob đọc một lần (`/put`, `/get/<key>`)
+
+- Đẩy: `POST /put` với header `x-relay-master` bằng `RELAY_MASTER_KEY`, thân tối đa 4194304 byte (4 MiB, dưới giới hạn ~4.5 MB của Vercel). Trả `{key, readUrl, expiresInSec: 900}` với `key` là 64 hex.
+- Đọc: `GET /get/<key>` — lần đọc đầu mở cửa 60 giây (đóng dấu `read_at` nguyên tử trong đúng một câu UPDATE); đọc lại trong cửa vẫn 200; hết cửa trả 410 và nội dung bị xóa. Khóa chưa đọc tự chết sau 900 giây. Hỗ trợ `Range: bytes=a-b` (206). `HEAD` chỉ đọc metadata, không tính là lần đọc.
+- Bảng `public.relay_blob` trong `db/schema.sql` (RLS bật, chặn anon/authenticated); áp dụng thủ công một lần. Logic chung nằm ở `lib/relay.ts`.
+- `RELAY_MASTER_KEY` chưa đặt thì `/put` trả 503 (fail closed). Sai khóa → 401. Thân rỗng → 400. Quá hạn mức → 413. Khóa sai dạng → 404.
+- Tự kiểm (server phải đang chạy, có bước ngủ 61 giây): `BASE=http://localhost:3000 RELAY_MASTER_KEY=… node scripts/relay-selftest.mjs`.

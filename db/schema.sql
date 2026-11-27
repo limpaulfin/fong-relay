@@ -54,3 +54,18 @@ create index if not exists unsubscribes_created_idx
   on public.unsubscribes (created_at);
 alter table public.unsubscribes enable row level security;
 revoke all on public.unsubscribes from anon, authenticated;
+
+-- Blob đọc một lần cho relay /put và /get/<key> (xem lib/relay.ts, app/api/put, app/api/get/[key]).
+-- Chạy một lần, thủ công. key = 64 hex; lần đọc đầu đóng dấu read_at và mở cửa 60 giây;
+-- khóa chưa đọc tự chết sau 900 giây; hết cửa thì trả 410 và nội dung bị xóa.
+create table if not exists public.relay_blob (
+  key text primary key,
+  content bytea not null,
+  mime text not null,
+  size integer not null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  read_at timestamptz
+);
+alter table public.relay_blob enable row level security;
+revoke all on public.relay_blob from anon, authenticated;
