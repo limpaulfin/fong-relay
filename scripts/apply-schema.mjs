@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Áp dụng CHỈ các câu lệnh relay_blob trong db/schema.sql (idempotent, chạy lại an toàn).
+// Áp dụng các câu lệnh relay_blob và relay_config trong db/schema.sql (idempotent, chạy lại an toàn).
 // Ghép đúng cách xử lý TLS/URL của lib/db.ts: bỏ mọi tham số truy vấn của URL,
 // kiểm chứng chỉ (rejectUnauthorized) với CA gốc Supabase đọc từ lib/supabase-ca.ts.
 // Không bao giờ in giá trị bí mật. Chế độ đọc riêng: node scripts/apply-schema.mjs --check
@@ -38,9 +38,9 @@ const schema = readFileSync(`${ROOT}db/schema.sql`, "utf8")
 const statements = schema
   .split(";")
   .map((s) => s.trim())
-  .filter((s) => s.length > 0 && /relay_blob/.test(s));
+  .filter((s) => s.length > 0 && /relay_(blob|config)/.test(s));
 if (statements.length === 0) {
-  console.error("không tìm thấy câu lệnh relay_blob nào trong db/schema.sql");
+  console.error("không tìm thấy câu lệnh relay_blob/relay_config nào trong db/schema.sql");
   process.exit(2);
 }
 
@@ -70,11 +70,11 @@ if (!checkOnly) {
     await sql.unsafe(stmt);
     console.log(`applied: ${stmt.split(/\s+/).slice(0, 4).join(" ")} …`);
   }
-  console.log(`applied ${statements.length} relay_blob statement(s)`);
+  console.log(`applied ${statements.length} relay statement(s)`);
 }
 
-const reg = await sql`select to_regclass('public.relay_blob') as reg, (select n.nspname || '.' || c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace where c.relname = 'relay_blob') as qualified`;
-console.log(`to_regclass: ${reg[0].qualified} (to_regclass=${reg[0].reg})`);
+const reg = await sql`select to_regclass('public.relay_blob') as reg, (select n.nspname || '.' || c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace where c.relname = 'relay_blob') as qualified, to_regclass('public.relay_config') as reg_config`;
+console.log(`to_regclass: ${reg[0].qualified} (to_regclass=${reg[0].reg}), relay_config: ${reg[0].reg_config}`);
 const dead = await sql`select count(*)::int as n from public.relay_blob where size > 0 and expires_at < now()`;
 console.log(`expired_unwiped_rows: ${dead[0].n}`);
 await sql.end();

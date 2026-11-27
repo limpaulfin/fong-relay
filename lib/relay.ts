@@ -1,7 +1,7 @@
 // Logic chung của relay blob đọc một lần: hằng số, kiểm khóa master, trợ giúp SQL.
 // Không bao giờ in nội dung blob hay giá trị biến môi trường ra log.
-import { randomBytes, timingSafeEqual } from "node:crypto";
-import type { sql } from "./db";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { sql } from "./db";
 
 // 4 MiB — phải thấp hơn giới hạn thân yêu cầu ~4.5 MB của Vercel.
 export const MAX_BODY_BYTES = 4194304;
@@ -14,18 +14,60 @@ export const RELAY_KEY_REGEX = /^[0-9a-f]{64}$/;
 
 export type Db = ReturnType<typeof sql>;
 
-export function relayMasterConfigured(): boolean {
-  return Boolean(process.env.RELAY_MASTER_KEY);
+// Hash khóa master đọc từ public.relay_config (dự phòng khi thiếu env), kèm hạn hết cache.
+let masterHashCache: { hash: string | null; expires: number } | null = null;
+// Hàng có: cache 30 giây. Không có hàng: cache 5 giây để serverless không dập DB.
+const MASTER_HASH_TTL_PRESENT_MS = 30_000;
+const MASTER_HASH_TTL_ABSENT_MS = 5_000;
+
+// Đọc master_sha256 (id = 1); không bao giờ log giá trị hash. Lỗi DB hoặc không có hàng
+// đều coi như "chưa cấu hình" (fail closed); lỗi KHÔNG được cache để lần sau thử lại.
+async function lookupMasterHash(): Promise<string | null> {
+  const now = Date.now();
+  if (masterHashCache && masterHashCache.expires > now) return masterHashCache.hash;
+  try {
+    const db = sql();
+    const rows = await db`select master_sha256 from public.relay_config where id = 1`;
+    const row = rows[0];
+    const hash =
+      row && typeof row.master_sha256 === "string" && row.master_sha256.length > 0
+        ? (row.master_sha256 as string)
+        : null;
+    masterHashCache = {
+      hash,
+      expires: now + (hash ? MASTER_HASH_TTL_PRESENT_MS : MASTER_HASH_TTL_ABSENT_MS),
+    };
+    return hash;
+  } catch {
+    return null;
+  }
 }
 
 // So sánh thời gian hằng; timingSafeEqual chỉ nhận hai bộ đệm cùng độ dài,
-// nên khác độ dài trả 401 ngay (độ dài khóa master không phải bí mật cần giấu).
-export function masterKeyMatches(candidate: string | null): boolean {
-  const secret = process.env.RELAY_MASTER_KEY;
-  if (!secret || candidate === null) return false;
-  const a = Buffer.from(candidate, "utf8");
-  const b = Buffer.from(secret, "utf8");
+// nên khác độ dài trả false ngay (độ dài khóa master không phải bí mật cần giấu).
+function bytesEqual(a: Buffer, b: Buffer): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+// Env đặt thì env thắng; thiếu env thì nhìn vào hàng relay_config trong DB.
+export async function relayMasterConfigured(): Promise<boolean> {
+  if (process.env.RELAY_MASTER_KEY) return true;
+  return (await lookupMasterHash()) !== null;
+}
+
+// Env đặt: so bytes candidate với env như cũ. Thiếu env: so SHA-256 hex của candidate
+// với master_sha256 trong DB trên hai bộ đệm 32 byte. Không có hàng/lỗi DB ⇒ false.
+export async function masterKeyMatches(candidate: string | null): Promise<boolean> {
+  if (candidate === null) return false;
+  const secret = process.env.RELAY_MASTER_KEY;
+  if (secret) {
+    return bytesEqual(Buffer.from(candidate, "utf8"), Buffer.from(secret, "utf8"));
+  }
+  const stored = await lookupMasterHash();
+  if (!stored) return false;
+  const expected = Buffer.from(stored, "hex");
+  const actual = createHash("sha256").update(candidate, "utf8").digest();
+  return expected.length === actual.length && timingSafeEqual(actual, expected);
 }
 
 export function newKey(): string {

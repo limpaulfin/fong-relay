@@ -69,3 +69,14 @@ create table if not exists public.relay_blob (
 );
 alter table public.relay_blob enable row level security;
 revoke all on public.relay_blob from anon, authenticated;
+
+-- Cấu hình relay lưu trong DB (2026-11-27): dự phòng cho env RELAY_MASTER_KEY khi thiếu.
+-- Chỉ lưu SHA-256 hex của khóa master, không bao giờ lưu khóa gốc. Một hàng duy nhất (id = 1).
+-- Env vẫn ưu tiên khi đã đặt (xem lib/relay.ts); RLS bật, chặn Data API (anon/authenticated).
+create table if not exists public.relay_config (
+  id smallint primary key check (id = 1),
+  master_sha256 text not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.relay_config enable row level security;
+revoke all on public.relay_config from anon, authenticated;

@@ -14,10 +14,10 @@ export const dynamic = "force-dynamic";
 // Đẩy blob: POST /put (rewrite từ /put) với header x-relay-master.
 // Trả 200 {key, readUrl, expiresInSec}; không bao giờ in nội dung thân vào log.
 export async function POST(req: Request) {
-  if (!relayMasterConfigured()) {
+  if (!(await relayMasterConfigured())) {
     return NextResponse.json({ error: "relay-not-configured" }, { status: 503 });
   }
-  if (!masterKeyMatches(req.headers.get("x-relay-master"))) {
+  if (!(await masterKeyMatches(req.headers.get("x-relay-master")))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!hasDatabase()) {
